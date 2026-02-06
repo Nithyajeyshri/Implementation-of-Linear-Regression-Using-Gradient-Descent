@@ -21,67 +21,65 @@ To write a program to predict the profit of a city using the linear regression m
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
 
-# Load data
-df = pd.read_csv("/content/score_updated.csv")
-display(df.head(10))
+data = pd.read_csv("50_Startups.csv")
+data = data.iloc[:, [0, 4]]
+data.columns = ["Population", "Profit"]
 
-# Visualize data
-plt.scatter(df['Hours'], df['Scores'])
-plt.xlabel('Hours')
-plt.ylabel('Scores')
-plt.title('Hours vs Scores')
+data["Population"] = (data["Population"] - data["Population"].mean()) / data["Population"].std()
+
+plt.scatter(data["Population"], data["Profit"])
+plt.xlabel("Scaled Population")
+plt.ylabel("Profit ($10,000)")
+plt.title("Profit Prediction")
 plt.show()
 
-x = df.iloc[:, 0:1]
-y = df.iloc[:, -1]
+def computeCost(X, y, theta):
+    m = len(y)
+    h = X.dot(theta)
+    return (1/(2*m)) * np.sum((h - y)**2)
 
-# Split data
-X_train, X_test, Y_train, Y_test = train_test_split(x, y, test_size=0.2, random_state=0)
+m = len(data)
+X_raw = data["Population"].values.reshape(m, 1)
+X = np.append(np.ones((m, 1)), X_raw, axis=1)
+y = data["Profit"].values.reshape(m, 1)
+theta = np.zeros((2, 1))
 
-# Train model
-lr = LinearRegression()
-lr.fit(X_train, Y_train)
+print("Initial Cost:", computeCost(X, y, theta))
 
-# Correcting variable case and generating predictions
-print("X_train samples:", X_train.head())
-print("Y_train samples:", Y_train.head())
+def gradientDescent(X, y, theta, alpha, num_iters):
+    m = len(y)
+    j_history = []
+    for i in range(num_iters):
+        predictions = X.dot(theta)
+        error = np.dot(X.T, (predictions - y))
+        theta -= alpha * (1/m) * error
+        j_history.append(computeCost(X, y, theta))
+    return theta, j_history
 
-# Generate predictions needed for metrics
-y_pred = lr.predict(X_test)
+theta, j_history = gradientDescent(X, y, theta, 0.01, 1500)
 
-# Regression line plot
-plt.scatter(df['Hours'], df['Scores'])
-plt.xlabel('Hours')
-plt.ylabel('Scores')
-plt.plot(X_train, lr.predict(X_train), color='red')
-plt.title('Regression Line')
+print(f"Model: h(x) = {round(theta[0,0],2)} + {round(theta[1,0],2)}x")
+
+plt.plot(j_history)
+plt.xlabel("Iteration")
+plt.ylabel("$J(\\Theta)$")
+plt.title("Cost Function Reduction")
 plt.show()
 
-print("Coefficient:", lr.coef_)
-print("Intercept:", lr.intercept_)
-
-# Metrics (fixed function name and defined y_pred)
-mse = mean_squared_error(Y_test, y_pred)
-rmse = np.sqrt(mse)
-mae = mean_absolute_error(Y_test, y_pred)
-r2 = r2_score(Y_test, y_pred)
-
-print("MSE:", mse)
-print("RMSE:", rmse)
-print("MAE:", mae)
-print("R2 Score:", r2)
+plt.scatter(data["Population"], data["Profit"])
+x_line = np.linspace(data["Population"].min(), data["Population"].max(), 100)
+y_line = theta[0,0] + theta[1,0] * x_line
+plt.plot(x_line, y_line, color="r")
+plt.xlabel("Scaled Population")
+plt.ylabel("Profit ($10,000)")
+plt.title("Linear Regression Fit")
+plt.show()
 ```
 ## Output:
-
-![WhatsApp Image 2026-02-04 at 4 02 22 PM](https://github.com/user-attachments/assets/7530ee06-6de4-4d15-8ccf-45963bce2693)
-![WhatsApp Image 2026-02-04 at 4 02 22 PM (1)](https://github.com/user-attachments/assets/f1a521ad-c07e-442d-bd53-708b019d9086)
-![WhatsApp Image 2026-02-04 at 4 02 22 PM (2)](https://github.com/user-attachments/assets/4a12a29f-3394-4e96-97ea-65fb68cfd5d1)
-![WhatsApp Image 2026-02-04 at 4 02 22 PM (3)](https://github.com/user-attachments/assets/7f75cada-37ea-4c3e-98e7-f0dc88cecf45)
-
+<img width="749" height="613" alt="Screenshot 2026-02-06 150339" src="https://github.com/user-attachments/assets/b8da75f8-4709-4e7d-a930-f1a9db306c4a" />
+<img width="701" height="570" alt="Screenshot 2026-02-06 150355" src="https://github.com/user-attachments/assets/bbc8cb83-79d0-4664-8b09-5a43f34af0ba" />
+<img width="747" height="568" alt="Screenshot 2026-02-06 150433" src="https://github.com/user-attachments/assets/055164a5-720e-4450-af7d-d1760eedd395" />
 
 
 
